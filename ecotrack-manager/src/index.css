@@ -1,0 +1,172 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --primary: #10B981;
+  --primary-glow: rgba(16, 185, 129, 0.4);
+  --bg-color: #020617;
+  --card-bg: #0F172A;
+  --border-color: rgba(255, 255, 255, 0.05);
+  --text-main: #ffffff;
+  --text-muted: #94a3b8;
+}
+
+:root.light {
+  --bg-color: #f8fafc;
+  --card-bg: #ffffff;
+  --border-color: rgba(15, 23, 42, 0.08); /* Darker border for light mode */
+  --text-main: #020617; /* Even darker for absolute clarity */
+  --text-muted: #475569;
+}
+
+body {
+  @apply antialiased transition-colors duration-500 overflow-x-hidden;
+  background-color: var(--bg-color);
+  color: var(--text-main);
+  font-family: 'Poppins', sans-serif;
+  background-image: 
+    radial-gradient(at 0% 0%, rgba(16, 185, 129, 0.15) 0px, transparent 50%),
+    radial-gradient(at 100% 0%, rgba(59, 130, 246, 0.1) 0px, transparent 50%),
+    radial-gradient(at 50% 100%, rgba(139, 92, 246, 0.1) 0px, transparent 50%);
+  min-height: 100vh;
+}
+
+:root.light body {
+  background-image: 
+    radial-gradient(at 0% 0%, rgba(16, 185, 129, 0.1) 0px, transparent 50%),
+    radial-gradient(at 100% 0%, rgba(59, 130, 246, 0.08) 0px, transparent 50%),
+    radial-gradient(at 50% 100%, rgba(139, 92, 246, 0.05) 0px, transparent 50%);
+}
+
+/* Premium Noise Texture */
+body::after {
+  content: "";
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  opacity: 0.03;
+  pointer-events: none;
+  z-index: 9999;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
+}
+
+:root.light body::after {
+  opacity: 0.015;
+}
+
+/* Mesh Gradient Animation */
+@keyframes meshGradient {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
+.bg-mesh {
+  background: linear-gradient(-45deg, var(--bg-color), var(--card-bg), #064e3b, var(--bg-color));
+  background-size: 400% 400%;
+  animation: meshGradient 15s ease infinite;
+}
+
+:root.light .bg-mesh {
+  background: linear-gradient(-45deg, #f1f5f9, #e2e8f0, #d1fae5, #f1f5f9);
+}
+
+@layer components {
+  .glass-panel {
+    @apply backdrop-blur-2xl transition-all duration-500 overflow-hidden;
+    background: var(--card-bg);
+    border: 1px solid var(--border-color);
+  }
+
+  :root.light .glass-panel {
+    background: rgba(255, 255, 255, 0.9); /* More solid in light mode */
+    box-shadow: 0 10px 40px rgba(15, 23, 42, 0.05);
+  }
+
+  .glass-card {
+    @apply backdrop-blur-3xl transition-all duration-500 overflow-hidden;
+    background: var(--card-bg);
+    border: 1px solid var(--border-color);
+  }
+
+  :root.light .glass-card {
+    background: rgba(255, 255, 255, 0.85); /* More solid for clarity */
+    box-shadow: 0 20px 60px rgba(15, 23, 42, 0.08);
+  }
+
+  .glass-dropdown {
+    @apply backdrop-blur-3xl transition-all duration-500 overflow-hidden shadow-2xl;
+    background: var(--card-bg);
+    border: 1px solid var(--border-color);
+  }
+
+  :root.light .glass-dropdown {
+    background: #ffffff;
+    box-shadow: 0 30px 100px rgba(15, 23, 42, 0.15);
+  }
+
+  .text-gradient {
+    @apply bg-clip-text text-transparent bg-gradient-to-r from-primary to-emerald-400;
+  }
+
+  .premium-btn {
+    @apply relative overflow-hidden transition-all duration-500 hover:scale-[1.02] active:scale-[0.98] shadow-lg hover:shadow-primary/30;
+  }
+
+  .premium-btn::after {
+    @apply content-[''] absolute inset-0 bg-white/10 translate-y-full transition-transform duration-500;
+  }
+
+  .premium-btn:hover::after {
+    @apply translate-y-0;
+  }
+
+  .eco-glow {
+    box-shadow: 0 0 30px var(--primary-glow);
+  }
+
+  .custom-scrollbar::-webkit-scrollbar {
+    width: 6px;
+  }
+  .custom-scrollbar::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  .custom-scrollbar::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 10px;
+  }
+  :root.light .custom-scrollbar::-webkit-scrollbar-thumb {
+    background: rgba(0, 0, 0, 0.1);
+  }
+}
+
+.recharts-cartesian-grid-horizontal line,
+.recharts-cartesian-grid-vertical line {
+  stroke: var(--border-color);
+}
+
+/* Premium Custom Broom Cursor */
+body, * {
+  cursor: url('/broom-cursor.svg') 4 4, auto !important;
+}
+
+/* Fix native time picker icon visibility in dark mode */
+input[type="time"]::-webkit-calendar-picker-indicator {
+  filter: invert(1) brightness(2);
+  cursor: pointer;
+  opacity: 0.7;
+  transition: opacity 0.3s;
+}
+input[type="time"]::-webkit-calendar-picker-indicator:hover {
+  opacity: 1;
+}
+:root.light input[type="time"]::-webkit-calendar-picker-indicator {
+  filter: none;
+  opacity: 0.6;
+}
+:root.light input[type="time"]::-webkit-calendar-picker-indicator:hover {
+  opacity: 1;
+}

@@ -1,0 +1,32 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 32 32">
+  <defs>
+    <linearGradient id="stick" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#b45309" />
+      <stop offset="100%" stop-color="#451a03" />
+    </linearGradient>
+    <linearGradient id="bristles" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#34d399" />
+      <stop offset="50%" stop-color="#10b981" />
+      <stop offset="100%" stop-color="#047857" />
+    </linearGradient>
+    <filter id="glow" x="-50%" y="-50%" width="200%" height="200%">
+      <feGaussianBlur stdDeviation="2" result="coloredBlur"/>
+      <feMerge>
+        <feMergeNode in="coloredBlur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+  </defs>
+
+  <g transform="translate(16,16) rotate(-45) translate(-16,-16)">
+    <!-- Stick -->
+    <rect x="14" y="16" width="4" height="15" rx="2" fill="url(#stick)" />
+    <!-- Clamp -->
+    <rect x="12" y="14" width="8" height="4" rx="1.5" fill="#fcd34d" />
+    <rect x="12" y="15" width="8" height="1" fill="#b45309" opacity="0.5" />
+    <!-- Bristles -->
+    <path d="M 12 14 L 20 14 Q 28 8 28 2 Q 16 0 4 2 Q 4 8 12 14 Z" fill="url(#bristles)" filter="url(#glow)"/>
+    <!-- Highlight Bristle Core -->
+    <path d="M 14 14 L 18 14 Q 22 8 22 3 Q 16 2 10 3 Q 10 8 14 14 Z" fill="#6ee7b7" opacity="0.6"/>
+  </g>
+</svg>
