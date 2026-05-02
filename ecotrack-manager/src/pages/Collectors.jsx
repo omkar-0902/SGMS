@@ -260,7 +260,7 @@ export default function Collectors() {
                            disabled={isSubmitting}
                            value={newName}
                            onChange={e => setNewName(e.target.value)}
-                           className="w-full pl-12 pr-4 py-3.5 bg-base/5 border border-border rounded-2xl text-content-main placeholder:text-content-muted/30 focus:border-primary focus:bg-primary/5 outline-none font-bold transition-all disabled:opacity-50"
+                           className="w-full pl-12 pr-4 py-3.5 bg-surface border border-border dark:bg-base/50 rounded-2xl text-content-main placeholder:text-content-muted/30 focus:border-primary focus:bg-primary/5 dark:focus:bg-primary/10 outline-none font-bold transition-all disabled:opacity-50"
                          />
                        </div>
                     </div>
@@ -276,7 +276,7 @@ export default function Collectors() {
                            disabled={isSubmitting}
                            value={newPhone}
                            onChange={e => setNewPhone(e.target.value)}
-                           className="w-full pl-12 pr-4 py-3.5 bg-base/5 border border-border rounded-2xl text-content-main placeholder:text-content-muted/30 focus:border-primary focus:bg-primary/5 outline-none font-bold transition-all disabled:opacity-50"
+                           className="w-full pl-12 pr-4 py-3.5 bg-surface border border-border dark:bg-base/50 rounded-2xl text-content-main placeholder:text-content-muted/30 focus:border-primary focus:bg-primary/5 dark:focus:bg-primary/10 outline-none font-bold transition-all disabled:opacity-50"
                          />
                        </div>
                     </div>

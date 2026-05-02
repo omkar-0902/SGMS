@@ -13,11 +13,11 @@
 }
 
 :root.light {
-  --bg-color: #f8fafc;
+  --bg-color: #f1f5f9; /* Slightly darker than pure white for better separation */
   --card-bg: #ffffff;
-  --border-color: rgba(15, 23, 42, 0.08); /* Darker border for light mode */
-  --text-main: #020617; /* Even darker for absolute clarity */
-  --text-muted: #475569;
+  --border-color: #e2e8f0; /* Concrete border instead of low opacity black */
+  --text-main: #0f172a; /* Strong slate for readability */
+  --text-muted: #64748b;
 }
 
 body {
@@ -93,8 +93,9 @@ body::after {
   }
 
   :root.light .glass-card {
-    background: rgba(255, 255, 255, 0.85); /* More solid for clarity */
-    box-shadow: 0 20px 60px rgba(15, 23, 42, 0.08);
+    background: #ffffff;
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+    border-color: #e2e8f0;
   }
 
   .glass-dropdown {
@@ -105,11 +106,17 @@ body::after {
 
   :root.light .glass-dropdown {
     background: #ffffff;
-    box-shadow: 0 30px 100px rgba(15, 23, 42, 0.15);
+    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+    border-color: #e2e8f0;
   }
 
   .text-gradient {
     @apply bg-clip-text text-transparent bg-gradient-to-r from-primary to-emerald-400;
+  }
+
+  /* Specific fix for light mode hover backgrounds */
+  :root.light .hover-surface:hover {
+    background-color: #f1f5f9;
   }
 
   .premium-btn {
@@ -153,20 +160,42 @@ body, * {
   cursor: url('/broom-cursor.svg') 4 4, auto !important;
 }
 
-/* Fix native time picker icon visibility in dark mode */
+/* Fix native time picker icon visibility and interaction */
+input[type="time"] {
+  position: relative;
+}
+
 input[type="time"]::-webkit-calendar-picker-indicator {
-  filter: invert(1) brightness(2);
+  position: absolute;
+  right: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 40px;
+  height: 40px;
+  margin: 0;
+  padding: 0;
+  opacity: 0; /* Hidden but clickable over our custom button */
   cursor: pointer;
-  opacity: 0.7;
-  transition: opacity 0.3s;
+  z-index: 20;
 }
-input[type="time"]::-webkit-calendar-picker-indicator:hover {
-  opacity: 1;
+@keyframes shine {
+  from { transform: translateX(-100%) skewX(45deg); }
+  to { transform: translateX(200%) skewX(45deg); }
 }
-:root.light input[type="time"]::-webkit-calendar-picker-indicator {
-  filter: none;
-  opacity: 0.6;
+
+.animate-shine {
+  animation: shine 3s infinite;
 }
-:root.light input[type="time"]::-webkit-calendar-picker-indicator:hover {
-  opacity: 1;
+
+::selection {
+  background-color: var(--primary);
+  color: #ffffff;
+}
+
+input:-webkit-autofill,
+input:-webkit-autofill:hover, 
+input:-webkit-autofill:focus {
+  -webkit-text-fill-color: var(--text-main);
+  -webkit-box-shadow: 0 0 0px 1000px var(--card-bg) inset;
+  transition: background-color 5000s ease-in-out 0s;
 }
