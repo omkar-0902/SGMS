@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Users, Plus, X, ShieldAlert, CheckCircle, User, Phone, Key, Loader2 } from 'lucide-react';
 import { createCollector, getCollectors } from '../services/api';
@@ -8,6 +9,7 @@ export default function Collectors() {
   const [collectors, setCollectors] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [searchParams, setSearchParams] = useSearchParams();
   
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [modalStep, setModalStep] = useState('form'); // 'form' | 'credentials'
@@ -24,7 +26,14 @@ export default function Collectors() {
 
   useEffect(() => {
     fetchCollectors();
-  }, []);
+    
+    // Check for "add" query param to auto-open modal
+    if (searchParams.get('add') === 'true') {
+      setIsModalOpen(true);
+      // Clean up the URL
+      setSearchParams({}, { replace: true });
+    }
+  }, [searchParams]);
 
   const fetchCollectors = async () => {
     try {

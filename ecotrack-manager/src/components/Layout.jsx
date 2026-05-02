@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import { Outlet, Link, useLocation, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
-  LayoutDashboard, Map, Settings, LogOut, Menu, X, Bell, ChevronDown, Activity, Award, Zap, Shield, Search, Check, AlertTriangle, Info, Sun, Moon, Users
+  LayoutDashboard, Map, Settings, LogOut, Menu, X, Bell, ChevronDown, Activity, Award, Zap, Shield, Search, Check, AlertTriangle, Info, Sun, Moon, Users, Plus
 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 
@@ -43,7 +43,7 @@ export default function Layout() {
     { name: 'Live Tracker', icon: Map, path: '/tracking' },
     { name: 'Collection Reports', icon: Activity, path: '/reports' },
     { name: 'Reward System', icon: Award, path: '/rewards' },
-    { name: 'Collectors', icon: Users, path: '/collectors' },
+    { name: 'Collectors', icon: Users, path: '/collectors', showAdd: true },
   ];
 
   const notifications = [
@@ -114,6 +114,19 @@ export default function Layout() {
                 )}
                 <item.icon className="w-5 h-5 min-w-[20px] transition-transform duration-300 group-hover:scale-110" />
                 {isSidebarOpen && <span className="text-sm font-bold tracking-tight">{item.name}</span>}
+                {isSidebarOpen && item.showAdd && (
+                  <button 
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      navigate('/collectors?add=true');
+                    }}
+                    className="ml-auto p-1.5 hover:bg-primary/20 rounded-lg transition-all hover:scale-110 active:scale-95 group/add"
+                    title="Add New Collector"
+                  >
+                    <Plus className="w-4 h-4 text-primary group-hover/add:rotate-90 transition-transform" />
+                  </button>
+                )}
               </Link>
             );
           })}

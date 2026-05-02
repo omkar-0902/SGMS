@@ -1,10 +1,9 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { 
-  Inbox, CheckCircle2, XCircle, Activity, Calendar, 
-  Clock, TrendingUp, ArrowUpRight, ArrowDownRight
-} from 'lucide-react';
-import { mockStats, mockSettings } from '../data/mockData';
+import { Inbox, CheckCircle2, XCircle, Activity, Calendar, Clock, TrendingUp, ArrowUpRight, ArrowDownRight, Loader2 } from 'lucide-react';
+import { mockSettings } from '../data/mockData';
+import { getDashboardStats } from '../services/api';
+import { useToast } from '../contexts/ToastContext';
 
 const today = new Date().toLocaleDateString('en-US', {
   weekday: 'long', year: 'numeric', month: 'long', day: 'numeric'
@@ -14,6 +13,27 @@ export default function Dashboard() {
   const [savedSettings, setSavedSettings] = useState(mockSettings);
   const [settings, setSettings] = useState(savedSettings);
   const [hasChanges, setHasChanges] = useState(false);
+  const [stats, setStats] = useState({ total: 0, collected: 0, failed: 0, active: 0 });
+  const [isLoading, setIsLoading] = useState(true);
+  const toast = useToast();
+
+  useEffect(() => {
+    const fetchStats = async () => {
+      try {
+        const data = await getDashboardStats();
+        setStats(data);
+      } catch (err) {
+        toast.error('Sync Error', 'Could not fetch live operational stats');
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    fetchStats();
+    
+    // Auto-refresh every 30 seconds for live feel
+    const interval = setInterval(fetchStats, 30000);
+    return () => clearInterval(interval);
+  }, []);
 
   const handleTimeChange = (key, value) => {
     setSettings(prev => ({ ...prev, workingHours: { ...prev.workingHours, [key]: value } }));
@@ -28,7 +48,7 @@ export default function Dashboard() {
   const container = { hidden: { opacity: 0 }, show: { opacity: 1, transition: { staggerChildren: 0.08 } } };
   const item = { hidden: { y: 24, opacity: 0 }, show: { y: 0, opacity: 1, transition: { type: 'spring', stiffness: 200, damping: 22 } } };
 
-  const collectionRate = Math.round((mockStats.completedPickups / mockStats.totalRequestsToday) * 100);
+  const collectionRate = stats.total > 0 ? Math.round((stats.collected / stats.total) * 100) : 0;
 
   return (
     <motion.div variants={container} initial="hidden" animate="show"
@@ -67,7 +87,9 @@ export default function Dashboard() {
             </div>
             <span className="text-[10px] font-black text-primary/70 bg-primary/10 px-2 py-1 rounded-full border border-primary/20 uppercase tracking-wider">Total</span>
           </div>
-          <p className="text-3xl font-black text-primary">{mockStats.totalRequestsToday}</p>
+          <p className="text-3xl font-black text-primary">
+            {isLoading ? <Loader2 className="w-8 h-8 animate-spin" /> : stats.total}
+          </p>
           <p className="text-xs font-black text-content-muted uppercase tracking-widest mt-1">Pickup Requests</p>
         </motion.div>
 
@@ -86,7 +108,9 @@ export default function Dashboard() {
               <span className="text-[10px] font-black">Collected</span>
             </div>
           </div>
-          <p className="text-3xl font-black text-emerald-400">{mockStats.completedPickups}</p>
+          <p className="text-3xl font-black text-emerald-400">
+            {isLoading ? <Loader2 className="w-8 h-8 animate-spin" /> : stats.collected}
+          </p>
           <p className="text-xs font-black text-content-muted uppercase tracking-widest mt-1">Collected Today</p>
         </motion.div>
 
@@ -105,7 +129,9 @@ export default function Dashboard() {
               <span className="text-[10px] font-black">Missed</span>
             </div>
           </div>
-          <p className="text-3xl font-black text-rose-400">{mockStats.missedPickups}</p>
+          <p className="text-3xl font-black text-rose-400">
+            {isLoading ? <Loader2 className="w-8 h-8 animate-spin" /> : stats.failed}
+          </p>
           <p className="text-xs font-black text-content-muted uppercase tracking-widest mt-1">Not Collected</p>
         </motion.div>
 
@@ -124,7 +150,9 @@ export default function Dashboard() {
               <span className="text-[10px] font-black">Live</span>
             </div>
           </div>
-          <p className="text-3xl font-black text-amber-400">{mockStats.activeRequests}</p>
+          <p className="text-3xl font-black text-amber-400">
+            {isLoading ? <Loader2 className="w-8 h-8 animate-spin" /> : stats.active}
+          </p>
           <p className="text-xs font-black text-content-muted uppercase tracking-widest mt-1">Active Today</p>
         </motion.div>
       </motion.div>
@@ -154,12 +182,12 @@ export default function Dashboard() {
                   <span className="w-2.5 h-2.5 rounded-full bg-emerald-400 inline-block" />
                   <span className="text-xs font-bold text-content-main">Collected</span>
                 </div>
-                <span className="text-xs font-black text-emerald-400">{mockStats.completedPickups} <span className="text-content-muted font-medium">pickups</span></span>
+                <span className="text-xs font-black text-emerald-400">{stats.collected} <span className="text-content-muted font-medium">pickups</span></span>
               </div>
               <div className="w-full h-2.5 bg-base/10 rounded-full overflow-hidden border border-border">
                 <motion.div
                   initial={{ width: 0 }}
-                  animate={{ width: `${(mockStats.completedPickups / mockStats.totalRequestsToday) * 100}%` }}
+                  animate={{ width: `${stats.total > 0 ? (stats.collected / stats.total) * 100 : 0}%` }}
                   transition={{ duration: 1.2, ease: 'easeOut', delay: 0.3 }}
                   className="h-full bg-gradient-to-r from-emerald-500 to-emerald-400 rounded-full"
                 />
@@ -173,12 +201,12 @@ export default function Dashboard() {
                   <span className="w-2.5 h-2.5 rounded-full bg-amber-400 inline-block" />
                   <span className="text-xs font-bold text-content-main">Active</span>
                 </div>
-                <span className="text-xs font-black text-amber-400">{mockStats.activeRequests} <span className="text-content-muted font-medium">requests</span></span>
+                <span className="text-xs font-black text-amber-400">{stats.active} <span className="text-content-muted font-medium">requests</span></span>
               </div>
               <div className="w-full h-2.5 bg-base/10 rounded-full overflow-hidden border border-border">
                 <motion.div
                   initial={{ width: 0 }}
-                  animate={{ width: `${(mockStats.activeRequests / mockStats.totalRequestsToday) * 100}%` }}
+                  animate={{ width: `${stats.total > 0 ? (stats.active / stats.total) * 100 : 0}%` }}
                   transition={{ duration: 1.2, ease: 'easeOut', delay: 0.5 }}
                   className="h-full bg-gradient-to-r from-amber-500 to-amber-400 rounded-full"
                 />
@@ -192,12 +220,12 @@ export default function Dashboard() {
                   <span className="w-2.5 h-2.5 rounded-full bg-rose-400 inline-block" />
                   <span className="text-xs font-bold text-content-main">Missed</span>
                 </div>
-                <span className="text-xs font-black text-rose-400">{mockStats.missedPickups} <span className="text-content-muted font-medium">pickups</span></span>
+                <span className="text-xs font-black text-rose-400">{stats.failed} <span className="text-content-muted font-medium">pickups</span></span>
               </div>
               <div className="w-full h-2.5 bg-base/10 rounded-full overflow-hidden border border-border">
                 <motion.div
                   initial={{ width: 0 }}
-                  animate={{ width: `${(mockStats.missedPickups / mockStats.totalRequestsToday) * 100}%` }}
+                  animate={{ width: `${stats.total > 0 ? (stats.failed / stats.total) * 100 : 0}%` }}
                   transition={{ duration: 1.2, ease: 'easeOut', delay: 0.7 }}
                   className="h-full bg-gradient-to-r from-rose-500 to-rose-400 rounded-full"
                 />

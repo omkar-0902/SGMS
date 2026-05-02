@@ -10,11 +10,15 @@ async function request(endpoint, options = {}) {
   const config = {
     ...options,
     headers: {
-      'Content-Type': 'application/json',
       'Accept': 'application/json', // Signal we want JSON back
       ...options.headers,
     }
   };
+
+  // Only include Content-Type if we're sending a body (avoiding incorrect type for GET)
+  if (options.body && !config.headers['Content-Type']) {
+    config.headers['Content-Type'] = 'application/json';
+  }
 
   const response = await fetch(url, config);
   const text = await response.text();
@@ -82,7 +86,7 @@ export async function getCollectors() {
 }
 
 export async function createCollector(data) {
-  return request('/admins/collector', {
+  return request('/admins/collectors', {
     method: 'POST',
     headers: authHeaders(),
     body: JSON.stringify(data),
@@ -121,7 +125,7 @@ export async function updateRequestStatus(id, status) {
 // ─── Reports / Analytics ─────────────────────────────────────────────────────
 
 export async function getDashboardStats() {
-  return request('/reports/stats', { headers: authHeaders() });
+  return request('/admins/stats/today', { headers: authHeaders() });
 }
 
 export async function getReports() {
