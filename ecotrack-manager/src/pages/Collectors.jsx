@@ -1,12 +1,13 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Users, Plus, X, ShieldAlert, CheckCircle, User, Phone, Key } from 'lucide-react';
+import { Users, Plus, X, ShieldAlert, CheckCircle, User, Phone, Key, Loader2 } from 'lucide-react';
+import { createCollector, getCollectors } from '../services/api';
+import { useToast } from '../contexts/ToastContext';
 
 export default function Collectors() {
-  const [collectors, setCollectors] = useState([
-    { id: 'ECO-C-4921', name: 'Michael Chen', phone: '+1 (555) 123-4567' },
-    { id: 'ECO-C-8832', name: 'Sarah Jenkins', phone: '+1 (555) 987-6543' },
-  ]);
+  const [collectors, setCollectors] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [modalStep, setModalStep] = useState('form'); // 'form' | 'credentials'
@@ -19,34 +20,73 @@ export default function Collectors() {
   const [generatedId, setGeneratedId] = useState('');
   const [generatedPassword, setGeneratedPassword] = useState('');
 
-  const generateCredentials = () => {
-    const id = `ECO-C-${Math.floor(1000 + Math.random() * 9000)}`;
-    const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
-    let pass = 'PW-';
-    for(let i=0; i<6; i++) pass += chars.charAt(Math.floor(Math.random() * chars.length));
-    
-    return { id, pass };
+  const toast = useToast();
+
+  useEffect(() => {
+    fetchCollectors();
+  }, []);
+
+  const fetchCollectors = async () => {
+    try {
+      const data = await getCollectors();
+      // Ensure data is an array
+      setCollectors(Array.isArray(data) ? data : []);
+    } catch (error) {
+      toast.error('System Error', 'Could not fetch collectors list');
+    } finally {
+      setIsLoading(false);
+    }
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!newName || !newPhone) return;
+    const nameValue = newName.trim();
+    const phoneValue = newPhone.trim();
+
+    if (!nameValue || !phoneValue) {
+      toast.error('Validation Error', 'Please provide both name and contact number.');
+      return;
+    }
     
-    const { id, pass } = generateCredentials();
-    setGeneratedId(id);
-    setGeneratedPassword(pass);
-    
-    // Move to next step without saving to the list yet
-    setModalStep('credentials');
+    setIsSubmitting(true);
+    try {
+      // Call biological backend API
+      const response = await createCollector({
+        name: nameValue,
+        phone: phoneValue
+      });
+      
+      if (!response) throw new Error("Empty response from server");
+
+      // Response shape: { collectorId: "...", password: "..." }
+      setGeneratedId(response.collectorId || response.id);
+      setGeneratedPassword(response.password || response.pass || "GENERATED");
+      
+      // Move to credentials display step
+      setModalStep('credentials');
+      toast.success('Registration Data Generated', 'Please secure the credentials below.');
+    } catch (error) {
+      const displayMsg = error.message.includes('403') 
+        ? "Access Denied (403): Your account cannot perform this action." 
+        : (error.message || 'Could not connect to operations backend');
+      toast.error('Registration Failed', displayMsg);
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
-  const handleFinishAndSave = () => {
-    // Add to the list
-    setCollectors([...collectors, {
-      id: generatedId,
-      name: newName,
-      phone: newPhone
-    }]);
+  const handleFinishAndSave = async () => {
+    // Copy to clipboard for the user
+    try {
+      const textToCopy = `Collector ID: ${generatedId}\nOne-Time Password: ${generatedPassword}`;
+      await navigator.clipboard.writeText(textToCopy);
+      toast.success('Stored in Clipboard', 'Credentials have been copied successfully.');
+    } catch (err) {
+      console.error('Clipboard failed', err);
+    }
+
+    // Refresh the list from server
+    fetchCollectors();
     
     // Reset and close
     setModalStep('form');
@@ -56,6 +96,7 @@ export default function Collectors() {
   };
 
   const handleClose = () => {
+    if (isSubmitting) return;
     setIsModalOpen(false);
     setTimeout(() => {
       setModalStep('form');
@@ -104,7 +145,7 @@ export default function Collectors() {
         initial={{ y: 20, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
         transition={{ delay: 0.2 }}
-        className="glass-card rounded-[2.5rem] shadow-2xl border border-border overflow-hidden relative z-10"
+        className="glass-card rounded-[2.5rem] shadow-2xl border border-border overflow-hidden relative z-10 min-h-[300px]"
       >
         <div className="overflow-x-auto custom-scrollbar">
           <table className="w-full">
@@ -116,34 +157,44 @@ export default function Collectors() {
               </tr>
             </thead>
             <tbody className="divide-y divide-border">
-              {collectors.map((collector, index) => (
-                <motion.tr
-                  key={collector.id}
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  transition={{ delay: 0.1 + index * 0.05 }}
-                  className="hover:bg-primary/5 transition-colors cursor-pointer group"
-                >
-                  <td className="px-8 py-5">
-                    <div className="flex items-center gap-4">
-                      <div className="w-10 h-10 rounded-xl bg-surface flex items-center justify-center text-primary font-black shadow-sm border border-border">
-                        {collector.name.charAt(0)}
+              {isLoading ? (
+                <tr>
+                   <td colSpan="3" className="px-8 py-20 text-center">
+                      <div className="flex flex-col items-center gap-4">
+                         <Loader2 className="w-8 h-8 text-primary animate-spin" />
+                         <p className="text-[10px] font-black uppercase tracking-widest text-content-muted">Synchronizing personnel roster...</p>
                       </div>
-                      <span className="text-sm font-black text-content-main group-hover:text-primary transition-colors">{collector.name}</span>
-                    </div>
-                  </td>
-                  <td className="px-8 py-5 whitespace-nowrap">
-                    <span className="text-sm font-black text-content-muted uppercase tracking-widest">{collector.id}</span>
-                  </td>
-                  <td className="px-8 py-5 whitespace-nowrap text-right">
-                    <span className="text-sm font-bold text-content-main">{collector.phone}</span>
-                  </td>
-                </motion.tr>
-              ))}
-              {collectors.length === 0 && (
+                   </td>
+                </tr>
+              ) : collectors.length > 0 ? (
+                collectors.map((collector, index) => (
+                  <motion.tr
+                    key={collector.collectorId || collector.id}
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    transition={{ delay: index * 0.05 }}
+                    className="hover:bg-primary/5 transition-colors cursor-pointer group"
+                  >
+                    <td className="px-8 py-5">
+                      <div className="flex items-center gap-4">
+                        <div className="w-10 h-10 rounded-xl bg-surface flex items-center justify-center text-primary font-black shadow-sm border border-border">
+                          {collector.name?.charAt(0) || 'C'}
+                        </div>
+                        <span className="text-sm font-black text-content-main group-hover:text-primary transition-colors">{collector.name}</span>
+                      </div>
+                    </td>
+                    <td className="px-8 py-5 whitespace-nowrap">
+                      <span className="text-sm font-black text-content-muted uppercase tracking-widest">{collector.collectorId || collector.id}</span>
+                    </td>
+                    <td className="px-8 py-5 whitespace-nowrap text-right">
+                      <span className="text-sm font-bold text-content-main">{collector.phone || collector.contact}</span>
+                    </td>
+                  </motion.tr>
+                ))
+              ) : (
                 <tr>
                   <td colSpan="3" className="px-8 py-12 text-center">
-                    <p className="text-content-muted font-bold tracking-widest uppercase text-xs">No collectors registered</p>
+                    <p className="text-content-muted font-bold tracking-widest uppercase text-xs">No collectors registered in this zone</p>
                   </td>
                 </tr>
               )}
@@ -161,7 +212,7 @@ export default function Collectors() {
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              onClick={modalStep === 'form' ? handleClose : null}
+              onClick={modalStep === 'form' && !isSubmitting ? handleClose : null}
               className="absolute inset-0 bg-base/80 backdrop-blur-md"
             />
             
@@ -174,9 +225,11 @@ export default function Collectors() {
             >
               {modalStep === 'form' ? (
                 <>
-                  <button onClick={handleClose} className="absolute top-6 right-6 p-2 rounded-xl bg-base/50 text-content-muted hover:text-content-main hover:bg-surface transition-colors">
-                    <X className="w-5 h-5" />
-                  </button>
+                  {!isSubmitting && (
+                    <button onClick={handleClose} className="absolute top-6 right-6 p-2 rounded-xl bg-base/50 text-content-muted hover:text-content-main hover:bg-surface transition-colors">
+                      <X className="w-5 h-5" />
+                    </button>
+                  )}
                   
                   <div className="mb-8">
                     <div className="w-12 h-12 rounded-2xl bg-primary/10 flex items-center justify-center border border-primary/20 mb-4">
@@ -193,11 +246,12 @@ export default function Collectors() {
                          <User className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-content-muted group-focus-within:text-primary transition-colors" />
                          <input 
                            type="text" 
-                           placeholder="John Doe"
+                           placeholder="e.g. KAMLESH"
                            required
+                           disabled={isSubmitting}
                            value={newName}
                            onChange={e => setNewName(e.target.value)}
-                           className="w-full pl-12 pr-4 py-3.5 bg-base/5 border border-border rounded-2xl text-content-main placeholder:text-content-muted/30 focus:border-primary focus:bg-primary/5 outline-none font-bold transition-all"
+                           className="w-full pl-12 pr-4 py-3.5 bg-base/5 border border-border rounded-2xl text-content-main placeholder:text-content-muted/30 focus:border-primary focus:bg-primary/5 outline-none font-bold transition-all disabled:opacity-50"
                          />
                        </div>
                     </div>
@@ -208,17 +262,29 @@ export default function Collectors() {
                          <Phone className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-content-muted group-focus-within:text-primary transition-colors" />
                          <input 
                            type="tel" 
-                           placeholder="+1 (555) 000-0000"
+                           placeholder="e.g. 1876543210"
                            required
+                           disabled={isSubmitting}
                            value={newPhone}
                            onChange={e => setNewPhone(e.target.value)}
-                           className="w-full pl-12 pr-4 py-3.5 bg-base/5 border border-border rounded-2xl text-content-main placeholder:text-content-muted/30 focus:border-primary focus:bg-primary/5 outline-none font-bold transition-all"
+                           className="w-full pl-12 pr-4 py-3.5 bg-base/5 border border-border rounded-2xl text-content-main placeholder:text-content-muted/30 focus:border-primary focus:bg-primary/5 outline-none font-bold transition-all disabled:opacity-50"
                          />
                        </div>
                     </div>
                     
-                    <button type="submit" className="w-full mt-4 premium-btn py-4 bg-primary text-white rounded-2xl font-black uppercase tracking-widest shadow-xl shadow-primary/20">
-                       Generate Credentials
+                    <button 
+                      type="submit" 
+                      disabled={isSubmitting}
+                      className="w-full mt-4 premium-btn py-4 bg-primary text-white rounded-2xl font-black uppercase tracking-widest shadow-xl shadow-primary/20 flex items-center justify-center gap-3 disabled:opacity-70"
+                    >
+                       {isSubmitting ? (
+                         <>
+                           <Loader2 className="w-5 h-5 animate-spin" />
+                           Encrypting Credentials...
+                         </>
+                       ) : (
+                         'Generate Credentials'
+                       )}
                     </button>
                   </form>
                 </>
@@ -243,13 +309,15 @@ export default function Collectors() {
                   </div>
                   
                   <div className="space-y-4 mb-8">
-                     <div className="p-4 rounded-2xl bg-base/5 border border-border">
-                        <p className="text-[10px] font-black uppercase tracking-widest text-content-muted mb-1 flex items-center gap-2"><User className="w-3 h-3"/> Collector ID</p>
-                        <p className="text-xl font-bold tracking-widest text-content-main">{generatedId}</p>
+                     <div className="p-4 rounded-2xl bg-base/5 border border-border group hover:border-primary/30 transition-all cursor-pointer overflow-hidden relative">
+                        <div className="absolute inset-0 bg-primary/5 opacity-0 group-hover:opacity-100 transition-opacity" />
+                        <p className="text-[10px] font-black uppercase tracking-widest text-content-muted mb-1 flex items-center gap-2 relative z-10"><User className="w-3 h-3"/> Collector ID</p>
+                        <p className="text-xl font-bold tracking-widest text-content-main relative z-10">{generatedId}</p>
                      </div>
-                     <div className="p-4 rounded-2xl bg-base/5 border border-border">
-                        <p className="text-[10px] font-black uppercase tracking-widest text-content-muted mb-1 flex items-center gap-2"><Key className="w-3 h-3"/> One-Time Password</p>
-                        <p className="text-xl font-bold tracking-wider text-content-main">{generatedPassword}</p>
+                     <div className="p-4 rounded-2xl bg-base/5 border border-border group hover:border-primary/30 transition-all cursor-pointer overflow-hidden relative">
+                        <div className="absolute inset-0 bg-primary/5 opacity-0 group-hover:opacity-100 transition-opacity" />
+                        <p className="text-[10px] font-black uppercase tracking-widest text-content-muted mb-1 flex items-center gap-2 relative z-10"><Key className="w-3 h-3"/> One-Time Password</p>
+                        <p className="text-xl font-bold tracking-wider text-content-main relative z-10">{generatedPassword}</p>
                      </div>
                   </div>
                   

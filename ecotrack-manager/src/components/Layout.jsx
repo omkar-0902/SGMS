@@ -4,6 +4,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { 
   LayoutDashboard, Map, Settings, LogOut, Menu, X, Bell, ChevronDown, Activity, Award, Zap, Shield, Search, Check, AlertTriangle, Info, Sun, Moon, Users
 } from 'lucide-react';
+import { useAuth } from '../contexts/AuthContext';
 
 export default function Layout() {
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
@@ -14,6 +15,17 @@ export default function Layout() {
   const profileRef = useRef(null);
   const notificationRef = useRef(null);
   const [theme, setTheme] = useState(localStorage.getItem('eco-theme') || 'dark');
+  const { user, logout } = useAuth();
+
+  // Derive display values from the JWT-decoded user object
+  const displayName = user?.name || user?.email?.split('@')[0] || 'Admin';
+  const displayEmail = user?.email || '';
+  const initials = displayName
+    .split(' ')
+    .map((w) => w[0])
+    .join('')
+    .toUpperCase()
+    .slice(0, 2);
 
   useEffect(() => {
     const root = window.document.documentElement;
@@ -53,7 +65,10 @@ export default function Layout() {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  const handleLogout = () => navigate('/login');
+  const handleLogout = () => {
+    logout();
+    navigate('/', { replace: true });
+  };
 
   return (
     <div className="flex h-screen bg-base overflow-hidden font-poppins text-content-main">
@@ -196,6 +211,7 @@ export default function Layout() {
 
             <div className="h-8 w-[1px] bg-border mx-2" />
 
+            {/* ── Profile Button (top-right) ── */}
             <div className="relative" ref={profileRef}>
               <button 
                 onClick={() => setShowProfileDropdown(!showProfileDropdown)}
@@ -203,9 +219,13 @@ export default function Layout() {
                   showProfileDropdown ? 'bg-primary/20 border-primary/30' : 'bg-surface/50 border-border hover:bg-surface'
                 }`}
               >
-                <div className="w-9 h-9 rounded-lg bg-gradient-to-br from-primary to-emerald-600 flex items-center justify-center text-white font-black shadow-lg shadow-primary/20">JD</div>
+                {/* Avatar bubble with initials from JWT */}
+                <div className="w-9 h-9 rounded-lg bg-gradient-to-br from-primary to-emerald-600 flex items-center justify-center text-white font-black shadow-lg shadow-primary/20 text-sm">
+                  {initials}
+                </div>
                 <div className="hidden md:block text-left">
-                  <p className="text-xs font-black text-content-main leading-tight">John Doe</p>
+                  {/* Display name derived from JWT sub field */}
+                  <p className="text-xs font-black text-content-main leading-tight capitalize">{displayName}</p>
                   <p className="text-[10px] font-bold text-content-muted uppercase tracking-widest">Administrator</p>
                 </div>
                 <ChevronDown className={`w-4 h-4 text-content-muted transition-transform duration-300 ${showProfileDropdown ? 'rotate-180 text-primary' : ''}`} />
@@ -219,9 +239,11 @@ export default function Layout() {
                     exit={{ opacity: 0, y: 10, scale: 0.95 }}
                     className="absolute right-0 mt-3 w-64 glass-dropdown rounded-[1.5rem] overflow-hidden z-50 origin-top-right border border-border py-2"
                   >
+                    {/* Dropdown header — shows real name + email from JWT */}
                     <div className="px-4 py-3 border-b border-border mb-2">
                        <p className="text-[10px] font-black text-content-muted uppercase tracking-widest">Active Account</p>
-                       <p className="text-sm font-bold text-content-main mt-1">john.doe@ecotrack.ai</p>
+                       <p className="text-sm font-black text-content-main mt-0.5 capitalize">{displayName}</p>
+                       <p className="text-[10px] font-medium text-content-muted mt-0.5 truncate">{displayEmail}</p>
                     </div>
                     <button onClick={handleLogout} className="w-full flex items-center gap-3 px-4 py-3 hover:bg-surface text-red-500 transition-all font-black uppercase tracking-widest text-sm">
                       <LogOut className="w-4 h-4" />

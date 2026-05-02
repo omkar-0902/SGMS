@@ -3,7 +3,8 @@ import { ErrorBoundary } from './components/ErrorBoundary';
 import { AuthProvider } from './contexts/AuthContext';
 import { ToastProvider } from './contexts/ToastContext';
 import Layout from './components/Layout';
-import LoginPage from './pages/LoginPage';
+
+import LandingPage from './pages/LandingPage';
 import Dashboard from './pages/Dashboard';
 import CollectorTracking from './pages/CollectorTracking';
 import Reports from './pages/Reports';
@@ -18,7 +19,8 @@ function App() {
           <ToastProvider>
             <Routes>
               {/* Public Routes */}
-              <Route path="/login" element={<LoginPage />} />
+              <Route path="/" element={<LandingPage />} />
+              <Route path="/login" element={<LandingPage forceLoginOpen={true} />} />
               
               {/* Private Routes (Wrapped in Layout) */}
               <Route element={<Layout />}>
@@ -30,9 +32,8 @@ function App() {
                 <Route path="/reports" element={<Reports />} />
               </Route>
               
-              {/* Global Redirects */}
-              <Route path="/" element={<Navigate to="/login" replace />} />
-              <Route path="*" element={<Navigate to="/dashboard" replace />} />
+              {/* Fallback */}
+              <Route path="*" element={<Navigate to="/" replace />} />
             </Routes>
           </ToastProvider>
         </AuthProvider>

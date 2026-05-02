@@ -4,8 +4,10 @@ import { useNavigate } from 'react-router-dom';
 import { Mail, Lock, ArrowRight, Eye, EyeOff, User, Loader2 } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { useToast } from '../../contexts/ToastContext';
+import { registerAdmin } from '../../services/api';
 import BorderGlow from '../BorderGlow';
 
+// ─── Login Form ───────────────────────────────────────────────────────────────
 export default function LoginForm({ onToggle }) {
   const navigate = useNavigate();
   const { login } = useAuth();
@@ -98,39 +100,83 @@ export default function LoginForm({ onToggle }) {
   );
 }
 
+// ─── Register Form ────────────────────────────────────────────────────────────
 export function RegisterForm({ onToggle }) {
+  const toast = useToast();
   const [showPassword, setShowPassword] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+
+  const handleRegister = async (e) => {
+    e.preventDefault();
+    const formData = new FormData(e.target);
+    const name     = formData.get('name').trim();
+    const email    = formData.get('email').trim();
+    const password = formData.get('password');
+
+    if (!name || !email || !password) {
+      toast.error('Validation Error', 'All fields are required.');
+      return;
+    }
+
+    setIsLoading(true);
+    try {
+      await registerAdmin({ name, email, password });
+
+      toast.success(
+        'Account Created!',
+        'Admin registered successfully. You can now log in.'
+      );
+
+      // Switch back to the login panel after a short delay
+      setTimeout(() => onToggle(), 1200);
+    } catch (err) {
+      toast.error(
+        'Registration Failed',
+        err.message || 'Could not create account. Please try again.'
+      );
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   return (
-    <form className="space-y-6">
+    <form onSubmit={handleRegister} className="space-y-6">
       <div className="space-y-4">
+        {/* Full Name */}
         <BorderGlow className="w-full" borderRadius={16} glowRadius={20} glowIntensity={0.8} backgroundColor="transparent" colors={['#10b981', '#34d399', '#059669']}>
           <div className="group relative w-full">
           <User className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-content-muted group-focus-within:text-primary transition-colors" />
           <input
             type="text"
+            name="name"
             required
             placeholder="Full Name"
             className="w-full bg-[var(--bg-color)] border border-[var(--border-color)] rounded-2xl py-4 pl-12 pr-4 text-sm font-sans font-bold text-[var(--text-main)] placeholder-[var(--text-muted)] focus:bg-[var(--card-bg)] focus:border-primary/50 focus:ring-2 focus:ring-primary/20 outline-none transition-all duration-300"
           />
         </div>
         </BorderGlow>
+
+        {/* Email */}
         <BorderGlow className="w-full" borderRadius={16} glowRadius={20} glowIntensity={0.8} backgroundColor="transparent" colors={['#10b981', '#34d399', '#059669']}>
           <div className="group relative w-full">
           <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-content-muted group-focus-within:text-primary transition-colors" />
           <input
             type="email"
+            name="email"
             required
             placeholder="Corporate Email"
             className="w-full bg-[var(--bg-color)] border border-[var(--border-color)] rounded-2xl py-4 pl-12 pr-4 text-sm font-sans font-bold text-[var(--text-main)] placeholder-[var(--text-muted)] focus:bg-[var(--card-bg)] focus:border-primary/50 focus:ring-2 focus:ring-primary/20 outline-none transition-all duration-300"
           />
         </div>
         </BorderGlow>
+
+        {/* Password */}
         <BorderGlow className="w-full" borderRadius={16} glowRadius={20} glowIntensity={0.8} backgroundColor="transparent" colors={['#10b981', '#34d399', '#059669']}>
           <div className="group relative w-full">
           <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-content-muted group-focus-within:text-primary transition-colors" />
           <input
             type={showPassword ? 'text' : 'password'}
+            name="password"
             required
             placeholder="Create Secure Key"
             className="w-full bg-[var(--bg-color)] border border-[var(--border-color)] rounded-2xl py-4 pl-12 pr-12 text-sm font-sans font-bold text-[var(--text-main)] placeholder-[var(--text-muted)] focus:bg-[var(--card-bg)] focus:border-primary/50 focus:ring-2 focus:ring-primary/20 outline-none transition-all duration-300"
@@ -148,9 +194,12 @@ export function RegisterForm({ onToggle }) {
 
       <button
         type="submit"
-        className="premium-btn w-full py-4 bg-primary rounded-2xl text-white font-black text-sm uppercase tracking-[0.2em] shadow-xl shadow-primary/20 flex items-center justify-center gap-3"
+        disabled={isLoading}
+        className="premium-btn w-full py-4 bg-primary rounded-2xl text-white font-black text-sm uppercase tracking-[0.2em] shadow-xl shadow-primary/20 flex items-center justify-center gap-3 disabled:opacity-50"
       >
-        Initialize Account <ArrowRight className="w-4 h-4" />
+        {isLoading
+          ? <Loader2 className="w-4 h-4 animate-spin" />
+          : <>Initialize Account <ArrowRight className="w-4 h-4" /></>}
       </button>
 
       <div className="text-center pt-4">
